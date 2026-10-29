@@ -1,0 +1,33 @@
+# ESP Screens - a Makerfabs E32S3RGB43 V3.1 built from a clone of this repository. Same shape as
+# tools/generate_entries.py output for catalog boards.
+substitutions:
+  FONT_DIR: "../fonts"
+
+packages:
+  core: !include ../packages/core.yaml
+  board: !include ../packages/boards/makerfabs43.yaml
+  hotspot: !include ../packages/features/hotspot.yaml
+
+external_components:
+  - source:
+      type: local
+      path: ../components
+    components: [smart_display]
+
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  power_save_mode: none
+  ap:
+    ssid: "Tessera ${DEVICE_FRIENDLY_NAME}"
+    password: !secret ap_password
+
+captive_portal:
