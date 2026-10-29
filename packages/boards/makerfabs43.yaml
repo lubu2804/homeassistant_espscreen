@@ -1,6 +1,10 @@
 # ESP Screens - Makerfabs E32S3RGB43 V3.1: a 4.3-inch 800 x 480 RGB panel with GT911 capacitive touch,
-# an ESP32-S3 with 16 MB flash and 8 MB octal PSRAM. The stock V3.1 backlight is wired always on; Makerfabs
-# documents a hardware modification (R59) for software control, so this profile does not claim dimming or standby.
+# an ESP32-S3 with 16 MB flash and 8 MB octal PSRAM.
+#
+# This test profile assumes the V2.0+ Makerfabs backlight modification is fitted: R59 connects GPIO44/RXD0 to the
+# backlight transistor and R29 is removed so the onboard CP2104 TX output no longer drives the same line. With that
+# modification GPIO44 can dim the backlight with PWM. Stock boards without the modification remain lit continuously.
+# GPIO2 is deliberately left free for the board's I2S LRCLK (audio uses GPIO2/19/20).
 #
 # The RGB pins, 16 MHz pixel clock and panel timings below were tried on the glass on 2026-10-29 with ESPHome
 # 2026.10.1. The GT911 answers at 0x5D on GPIO17/18; on the newer Makerfabs hardware GPIO38 is the GT911 reset line
@@ -14,7 +18,6 @@ packages:
   look: !include ../looks/standard.yaml
   touch: !include ../features/capacitive-touch.yaml
   backlight: !include ../features/backlight.yaml
-  backlight_always_on: !include ../features/backlight-always-on.yaml
   camera: !include ../features/camera.yaml
   self_test: !include ../features/self-test.yaml
 
@@ -39,8 +42,9 @@ substitutions:
   SCREEN_MAX_BAR_ITEMS: "12"
   LVGL_BUFFER_SIZE: "12%"
 
-  # The stock V3.1 board does not expose software backlight levels. R59 is a hardware modification, not assumed here.
-  BACKLIGHT_DIMMABLE: "false"
+  # R59 + R29 modification exposes the backlight transistor on GPIO44, so Tessera may offer brightness controls.
+  BACKLIGHT_DIMMABLE: "true"
+  CAN_STANDBY: "true"
 
   # Same glass, density and 3-row layout as the Waveshare 4.3.
   GRID_GAP_Y: "13"
@@ -54,7 +58,7 @@ esp32:
 
 logger:
   tx_buffer_size: 2048
-  # The ESP32-S3's native USB port carries the serial log.
+  # The ESP32-S3's native USB port carries the serial log. GPIO44 remains free for the modified backlight.
   hardware_uart: USB_SERIAL_JTAG
 
 # The GT911 has the board's I2C bus to itself.
@@ -65,14 +69,14 @@ i2c:
   frequency: 400kHz
   scan: true
 
-# The stock V3.1 backlight is hard-wired on. Keep the common backlight contract without pretending that a percentage
-# changes the glass; features/backlight-always-on.yaml removes standby/night and alert blinks.
+# On a modified V2.0+/V3.1 board R59 routes GPIO44/RXD0 to Q7, the backlight transistor. R29 must be removed so the
+# CP2104's TX output does not fight the PWM signal. 1 kHz is well above visible flicker while retaining fine LEDC duty
+# resolution. A stock, unmodified board ignores this output and its backlight remains permanently on.
 output:
-  - platform: template
+  - platform: ledc
     id: gpio_backlight_pwm
-    type: float
-    write_action:
-      - lambda: '(void)0;'
+    pin: GPIO44
+    frequency: 1000 Hz
 
 # Newer Makerfabs revisions route GT911 reset to GPIO38 and do not use a separate interrupt line.
 touchscreen:
