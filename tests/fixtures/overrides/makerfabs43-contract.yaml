@@ -1,0 +1,5 @@
+# Written in the shape of tools/new_board.py: the parts every board names the same way
+# (docs/PROFILES.md, "What an override may rely on"), extended the way a screen's Override YAML does it.
+light:
+  - id: !extend back_light
+    default_transition_length: 200ms
