@@ -1,0 +1,111 @@
+# ESP Screens - Makerfabs E32S3RGB43 V3.1: a 4.3-inch 800 x 480 RGB panel with GT911 capacitive touch,
+# an ESP32-S3 with 16 MB flash and 8 MB octal PSRAM. The stock V3.1 backlight is wired always on; Makerfabs
+# documents a hardware modification (R59) for software control, so this profile does not claim dimming or standby.
+#
+# The RGB pins, 16 MHz pixel clock and panel timings below were tried on the glass on 2026-10-29 with ESPHome
+# 2026.10.1. The GT911 answered at 0x5D on GPIO17/18 with its interrupt on GPIO38, and ESPHome found 8 MB PSRAM.
+#
+# A board file is the board's hardware, the facts the shared tree takes from it (its glass and its grid), and the
+# features it has; docs/PROFILES.md says how the files of a screen fit together and docs/ADDING_A_BOARD.md how a
+# board like this one is added.
+packages:
+  hardware: !include ../hardware/esp32s3-rgb.yaml
+  look: !include ../looks/standard.yaml
+  touch: !include ../features/capacitive-touch.yaml
+  backlight: !include ../features/backlight.yaml
+  backlight_always_on: !include ../features/backlight-always-on.yaml
+  camera: !include ../features/camera.yaml
+  self_test: !include ../features/self-test.yaml
+
+substitutions:
+  # The key of this board file; the firmware reports it so ESP Screens knows what board a screen is.
+  BOARD_ID: "makerfabs43"
+  DEVICE_NAME: "makerfabs43-new"
+  DEVICE_FRIENDLY_NAME: "My Makerfabs"
+
+  # The glass: 933 diagonal pixels over 4.3 inches.
+  PANEL_W: "800"
+  PANEL_H: "480"
+  DISPLAY_DPI: "216.966"
+  # The same 4.3-inch 800 x 480 glass density as the Waveshare 4.3: nine cards lying down, four standing up.
+  GRID_COLS: "3"
+  GRID_ROWS: "3"
+  GRID_COLS_PORTRAIT: "1"
+  GRID_ROWS_PORTRAIT: "4"
+  # The tile list, cards and extras live in PSRAM on this ESP32-S3.
+  SCREEN_MAX_TILES: "128"
+  SCREEN_MAX_PAGES: "24"
+  SCREEN_MAX_BAR_ITEMS: "12"
+  LVGL_BUFFER_SIZE: "12%"
+
+  # The stock V3.1 board does not expose software backlight levels. R59 is a hardware modification, not assumed here.
+  BACKLIGHT_DIMMABLE: "false"
+
+  # Same glass, density and 3-row layout as the Waveshare 4.3.
+  GRID_GAP_Y: "13"
+
+# ============================================================
+# No need to edit below this line.
+# ============================================================
+
+esp32:
+  flash_size: 16MB
+
+logger:
+  tx_buffer_size: 2048
+  # The ESP32-S3's native USB port carries the serial log.
+  hardware_uart: USB_SERIAL_JTAG
+
+# The GT911 has the board's I2C bus to itself.
+i2c:
+  id: touch_bus
+  sda: GPIO17
+  scl: GPIO18
+  frequency: 400kHz
+  scan: true
+
+# The stock V3.1 backlight is hard-wired on. Keep the common backlight contract without pretending that a percentage
+# changes the glass; features/backlight-always-on.yaml removes standby/night and alert blinks.
+output:
+  - platform: template
+    id: gpio_backlight_pwm
+    type: float
+    write_action:
+      - lambda: '(void)0;'
+
+# V3.1 routes the GT911 interrupt to GPIO38. No separate touch reset line is used by the tested configuration.
+touchscreen:
+  - platform: gt911
+    id: ts_touch
+    i2c_id: touch_bus
+    display: my_display
+    interrupt_pin: GPIO38
+    update_interval: 20ms
+
+# Makerfabs' 800 x 480 RGB565 panel. It needs no SPI init sequence; model RPI is ESPHome's custom RGB panel base.
+display:
+  - platform: mipi_rgb
+    model: RPI
+    id: my_display
+    dimensions:
+      width: ${PANEL_W}
+      height: ${PANEL_H}
+    de_pin: GPIO40
+    hsync_pin: GPIO39
+    vsync_pin: GPIO41
+    pclk_pin: GPIO42
+    pclk_frequency: 16MHz
+    pclk_inverted: true
+    hsync_front_porch: 40
+    hsync_pulse_width: 48
+    hsync_back_porch: 88
+    vsync_front_porch: 13
+    vsync_pulse_width: 3
+    vsync_back_porch: 32
+    data_pins:
+      red: [GPIO45, GPIO48, GPIO47, GPIO21, GPIO14]
+      green: [GPIO5, GPIO6, GPIO7, GPIO15, GPIO16, GPIO4]
+      blue: [GPIO8, GPIO3, GPIO46, GPIO9, GPIO1]
+    color_order: RGB
+    update_interval: never
+    auto_clear_enabled: false
