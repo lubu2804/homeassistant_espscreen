@@ -53,6 +53,12 @@ waveshare43:
     # Some of these boards carry 8 MB of flash instead of 16 MB (GitHub #265).
     FLASH_SIZE: [16MB, 8MB]
 
+makerfabs43:
+  file: makerfabs43.yaml
+  name: Makerfabs
+  model: E32S3RGB43 V3.1
+  status: experimental
+
 jc8012p4a1:
   file: guition-jc8012p4a1.yaml
   name: Guition
