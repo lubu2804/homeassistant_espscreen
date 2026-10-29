@@ -21,8 +21,7 @@ COPY translations /app/translations
 COPY CHANGELOG.md /app/CHANGELOG.md
 
 # TEST-BRANCH ONLY: expose the Makerfabs 4.3 V3.1 in New screen before the generated boards.json is committed.
-# Its glass and grid are identical to the existing 4.3-inch 800x480 profile; only the board identity and stock
-# backlight capabilities differ. Remove this block before the upstream PR and regenerate boards.json normally.
+# Remove this block before the upstream PR and regenerate boards.json normally.
 RUN python3 - <<'PY'
 import copy
 import json
@@ -33,8 +32,9 @@ with open(path, encoding='utf-8') as f:
 
 base = copy.deepcopy(boards['waveshare43'])
 base['board'] = 'makerfabs43'
-base['dimmable'] = False
-base['can_standby'] = False
+# Test hardware is the R59-fitted/R29-removed V3.1 variant, so GPIO44 drives the backlight with PWM.
+base['dimmable'] = True
+base['can_standby'] = True
 catalog = copy.deepcopy(base.get('catalog', {}))
 catalog.update({
     'name': 'Makerfabs',
