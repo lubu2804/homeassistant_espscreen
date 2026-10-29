@@ -1,0 +1,19 @@
+# ESP Screens - the package a Makerfabs E32S3RGB43 V3.1 builds from over GitHub. Written in the same shape as
+# tools/generate_entries.py output for catalog boards.
+substitutions:
+  GITHUB_REF: "main"
+  FONT_DIR: "https://raw.githubusercontent.com/MaxGramser/homeassistant_espscreen/${GITHUB_REF}/fonts"
+
+packages:
+  core: !include core.yaml
+  board: !include boards/makerfabs43.yaml
+  hotspot: !include features/hotspot.yaml
+
+external_components:
+  - source:
+      type: git
+      url: https://github.com/MaxGramser/homeassistant_espscreen.git
+      ref: ${GITHUB_REF}
+      path: components
+    refresh: 0s
+    components: [smart_display]
