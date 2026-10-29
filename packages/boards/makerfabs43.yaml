@@ -3,7 +3,8 @@
 # documents a hardware modification (R59) for software control, so this profile does not claim dimming or standby.
 #
 # The RGB pins, 16 MHz pixel clock and panel timings below were tried on the glass on 2026-10-29 with ESPHome
-# 2026.10.1. The GT911 answered at 0x5D on GPIO17/18 with its interrupt on GPIO38, and ESPHome found 8 MB PSRAM.
+# 2026.10.1. The GT911 answers at 0x5D on GPIO17/18; on the newer Makerfabs hardware GPIO38 is the GT911 reset line
+# and no separate interrupt pin is used.
 #
 # A board file is the board's hardware, the facts the shared tree takes from it (its glass and its grid), and the
 # features it has; docs/PROFILES.md says how the files of a screen fit together and docs/ADDING_A_BOARD.md how a
@@ -73,13 +74,16 @@ output:
     write_action:
       - lambda: '(void)0;'
 
-# V3.1 routes the GT911 interrupt to GPIO38. No separate touch reset line is used by the tested configuration.
+# Newer Makerfabs revisions route GT911 reset to GPIO38 and do not use a separate interrupt line.
 touchscreen:
   - platform: gt911
     id: ts_touch
     i2c_id: touch_bus
     display: my_display
-    interrupt_pin: GPIO38
+    reset_pin:
+      number: GPIO38
+      mode:
+        output: true
     update_interval: 20ms
 
 # Makerfabs' 800 x 480 RGB565 panel. It needs no SPI init sequence; model RPI is ESPHome's custom RGB panel base.
