@@ -70,12 +70,15 @@ i2c:
   scan: true
 
 # On a modified V2.0+/V3.1 board R59 routes GPIO44/RXD0 to Q7, the backlight transistor. R29 must be removed so the
-# CP2104's TX output does not fight the PWM signal. 1 kHz is well above visible flicker while retaining fine LEDC duty
-# resolution. A stock, unmodified board ignores this output and its backlight remains permanently on.
+# CP2104's TX output does not fight the PWM signal. The backlight stage is active-low, so the GPIO is inverted here:
+# Tessera 0% becomes electrically high/off and 100% becomes low/full brightness. 1 kHz is above visible flicker while
+# retaining fine LEDC duty resolution. A stock, unmodified board ignores this output and stays permanently lit.
 output:
   - platform: ledc
     id: gpio_backlight_pwm
-    pin: GPIO44
+    pin:
+      number: GPIO44
+      inverted: true
     frequency: 1000 Hz
 
 # Newer Makerfabs revisions route GT911 reset to GPIO38 and do not use a separate interrupt line.
